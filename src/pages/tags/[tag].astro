@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BlogPost from '../../components/BlogPost.astro';
+
+export async function getStaticPaths() {
+  // Cargar todos los posts dentro de esta función
+  const allPosts = Object.values(import.meta.glob('../posts/*.md', { eager: true })).map((post: any) => ({
+    url: post.url,
+    frontmatter: post.frontmatter,
+  }));
+
+  // Crear un conjunto de etiquetas únicas
+  const uniqueTags = [...new Set(allPosts.flatMap((post) => post.frontmatter.tags || []))];
+
+  // Generar rutas dinámicas para cada etiqueta
+  return uniqueTags.map((tag) => {
+    const filteredPosts = allPosts.filter((post) => post.frontmatter.tags?.includes(tag));
+    return {
+      params: { tag },
+      props: { posts: filteredPosts },
+    };
+  });
+}
+
+const { tag } = Astro.params;
+const posts = Astro.props?.posts || [];
+---
+
+<BaseLayout pageTitle={tag}>
+  <p>Posts etiquetados con <strong>{tag}</strong>:</p>
+  {posts.length > 0 ? (
+    <ul>
+      {posts.map((post) => (
+        <BlogPost url={post.url} title={post.frontmatter.title} />
+      ))}
+    </ul>
+  ) : (
+    <p>No hay posts etiquetados con {tag}.</p>
+  )}
+</BaseLayout>
